@@ -45,14 +45,17 @@ stop() {
     echo -n "Stopping supervisord: "
     /usr/bin/supervisorctl $OPTIONS shutdown
 	if [ -n "$WAIT_FOR_SUBPROCESSES" ]; then 
-        echo "Waiting roughly 60 seconds for $PIDFILE to be removed after child processes exit"
+        echo "Waiting roughly 60 seconds for $PIDFILE to be removed after child
+processes exit"
         for sleep in  2 2 2 2 4 4 4 4 8 8 8 8 last; do
             if [ ! -e $PIDFILE ] ; then
-                echo "Supervisord exited as expected in under $total_sleep seconds"
+                echo "Supervisord exited as expected in under $total_sleep
+seconds"
                 break
             else
                 if [[ $sleep -eq "last" ]] ; then
-                    echo "Supervisord still working on shutting down. We've waited roughly 60 seconds, we'll let it do its thing from here"
+                    echo "Supervisord still working on shutting down. We've
+waited roughly 60 seconds, we'll let it do its thing from here"
                     return 1
                 else
                     sleep $sleep
@@ -63,7 +66,8 @@ stop() {
         done
     fi
 
-    # always remove the subsys.  we might have waited a while, but just remove it at this point.
+    # always remove the subsys.  we might have waited a while, but just remove
+    # it at this point.
     rm -f /var/lock/subsys/supervisord
 }
 
@@ -98,8 +102,10 @@ case "$1" in
         RETVAL=$?
         ;;
     *)
-        echo $"Usage: $0 {start|stop|status|restart|reload|force-reload|condrestart}"
+        echo $"Usage: $0
+{start|stop|status|restart|reload|force-reload|condrestart}"
         exit 1
 esac
 
 exit $RETVAL
+

@@ -27,6 +27,7 @@ node default {
   $mco_password = "marionette"
   $mco_connector = "rabbitmq"
 
+  $rabbitmq_host = $::fuel_settings['ADMIN_NETWORK']['ipaddress']
   $rabbitmq_naily_user = "naily"
   $rabbitmq_naily_password = "naily"
 
@@ -53,8 +54,7 @@ node default {
     # (this is not implemented now)
     database_name => "nailgun",
     database_engine => "postgresql",
-    #FIXME(mmosesohn) - set to fuel master dns
-    database_host => "172.17.0.164",
+    database_host => $::fuel_settings['ADMIN_NETWORK']['ipaddress'],
     database_port => "5432",
     database_user => "nailgun",
     database_passwd => "nailgun",
@@ -62,7 +62,7 @@ node default {
     staticdir => "/opt/nailgun/share/nailgun/static",
     templatedir => "/opt/nailgun/share/nailgun/static",
 
-    cobbler_url => "http://localhost/cobbler_api",
+    cobbler_url => "http://${::fuel_settings['ADMIN_NETWORK']['ipaddress']}/cobbler_api",
     cobbler_user => $cobbler_user,
     cobbler_password => $cobbler_password,
 
@@ -73,8 +73,10 @@ node default {
     mco_password => $mco_password,
     mco_connector => "rabbitmq",
 
+    rabbitmq_host => $rabbitmq_host,
     rabbitmq_naily_user => $rabbitmq_naily_user,
     rabbitmq_naily_password => $rabbitmq_naily_password,
+
     puppet_master_hostname => $puppet_master_hostname,
     puppet_master_ip => $::fuel_settings['ADMIN_NETWORK']['ipaddress'],
   }

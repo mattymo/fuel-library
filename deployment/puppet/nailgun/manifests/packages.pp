@@ -1,10 +1,11 @@
 class nailgun::packages(
   $gem_source = "http://rubygems.org/",
   ){
-
+  Anchor<| title == "nailgun-packages-start" |>
   define nailgun_safe_package(){
     if ! defined(Package[$name]){
-      @package { $name : }
+      #@package { $name : }
+      package { $name : }
     }
   }
 
@@ -22,6 +23,7 @@ class nailgun::packages(
   nailgun_safe_package { "gcc-c++": }
   nailgun_safe_package { "make": }
   nailgun_safe_package { "rsyslog": }
+  Anchor<| title == "nailgun-packages-end" |>
 
   #  nailgun_safe_package { "cman": }
   nailgun_safe_package { "fence-agents": }

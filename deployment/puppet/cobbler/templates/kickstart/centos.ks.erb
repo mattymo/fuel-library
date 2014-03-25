@@ -5,7 +5,7 @@ install
 url --url=$tree
 
 # ALTERNATIVE REPOSITORIES
-<% @ks_repo.each do |repo| %>
+<% ks_repo.each do |repo| %>
 repo --name=<%= repo['name'] %> --baseurl=<%= repo['url'] %>
 <% end %>
 
@@ -14,7 +14,7 @@ lang en_US.UTF-8
 keyboard us
 
 # WHICH TIMEZONE TO USE ON INSTALLED SYSTEM
-timezone --utc <%= @ks_system_timezone %>
+timezone --utc <%= ks_system_timezone %>
 
 # REBOOT AFTER INSTALLATION
 reboot
@@ -23,7 +23,7 @@ firewall --disable
 zerombr
 
 # SET ROOT PASSWORD DEFAULT IS r00tme
-rootpw --iscrypted <%= @ks_encrypted_root_password %>
+rootpw --iscrypted <%= ks_encrypted_root_password %>
 
 # AUTHENTICATION CUSTOMIZATION
 authconfig --enableshadow --passalgo=sha512
@@ -36,10 +36,6 @@ text
 
 # SKIP CONFIGURING X
 skipx
-
-# SSH user and some unknown random password,
-# we're going to use SSH keys anyway
-sshpw --username root --iscrypted $6$tCD3X7ji$1urw6qEMDkVxOkD33k2jjklHSDG2hg2234kJHESJ3hwhsjHshSJshHSJSh333je34DHJHDr4je4AMP85NxQe61
 
 %include /tmp/partition.ks
 
@@ -78,10 +74,6 @@ $SNIPPET('kickstart_start')
 # INTO KICKSTART BY 'network_config' SNIPPET
 $SNIPPET('pre_install_network_config')
 
-# CONFIGURES SSH KEY ACCESS FOR SSHD CONSOLE
-# DURING OPERATING SYSTEM INSTALLATION
-$SNIPPET('anaconda_ssh_console')
-
 # COBBLER EMBEDDED SNIPPET: 'pre_install_partition'
 # DETECTS HARD DRIVES AND SETS FIRST OF THEM
 # AS INSTALLATION TARGET AND BOOTLOADER INSTALLATION TARGET
@@ -91,7 +83,6 @@ $SNIPPET('pre_install_partition_lvm')
 # HERE ARE LIST OF PACKAGES THAT WILL BE INSTALLED
 # FIXME --ignoremissing
 %packages --nobase --ignoremissing
-$SNIPPET('centos_pkg_kernel_lt_if_enabled')
 @Core
 authconfig
 bfa-firmware
@@ -148,7 +139,6 @@ $SNIPPET('mcollective_install_if_enabled')
 # HERE ARE COMMANDS THAT WILL BE LAUNCHED JUST AFTER
 # INSTALLATION ITSELF COMPLETED
 %post
-
 yum versionlock puppet
 yum versionlock kernel
 yum versionlock iproute2
@@ -162,10 +152,10 @@ echo -e "kernel.core_pattern=/var/log/coredump/core.%e.%p.%h.%t" >> /etc/sysctl.
 chmod 777 /var/log/coredump
 echo -e "* soft core unlimited\n* hard core unlimited" >> /etc/security/limits.conf
 
-gem install httpclient --version 2.2.5  --source <%= @gem_source %> --no-ri --no-rdoc
-gem install json       --version 1.6.1  --source <%= @gem_source %> --no-ri --no-rdoc
-gem install ohai       --version 6.14.0 --source <%= @gem_source %> --no-ri --no-rdoc
-gem install rethtool   --version 0.0.3  --source <%= @gem_source %> --no-ri --no-rdoc
+gem install httpclient --version 2.2.5  --source <%= gem_source %> --no-ri --no-rdoc
+gem install json       --version 1.6.1  --source <%= gem_source %> --no-ri --no-rdoc
+gem install ohai       --version 6.14.0 --source <%= gem_source %> --no-ri --no-rdoc
+gem install rethtool   --version 0.0.3  --source <%= gem_source %> --no-ri --no-rdoc
 mkdir -p /etc/nailgun-agent/
 cat > /etc/nailgun-agent/config.yaml << EOA
 ---
@@ -213,17 +203,13 @@ echo target > /etc/nailgun_systemtype
 
 # COBBLER EMBEDDED SNIPPET: 'authorized_keys'
 # PUTS authorized_keys file into /root/.ssh/authorized_keys
-$SNIPPET('centos_authorized_keys')
+$SNIPPET('authorized_keys')
 
 # COBBLER EMBEDDED SNIPPET: 'nailgun_repo'
 # REMOVES ALL *.repo FILES FROM /etc/yum.repos.d AND
 # CREATES /etc/yum.repos.d/nailgun.repo FILE AND
 # PUTS IN IT ALL THE REPOSITORIES DEFINED IN ks_repo VARIABLE
 $SNIPPET('nailgun_repo')
-
-# COBBLER EMBEDDED SNIPPET: 'kernel_lt_if_enabled'
-# INSTALLS kernel-lt PACKAGE IF kernel_lt VARIABLE IS SET TO 1
-$SNIPPET('centos_post_kernel_lt_if_enabled')
 
 # COBBLER EMBEDDED SNIPPET: 'ssh_disable_gssapi'
 # REMOVES "GSSAPICleanupCredentials yes" AND "GSSAPIAuthentication yes" LINES
@@ -235,6 +221,7 @@ $SNIPPET('ssh_disable_gssapi')
 $SNIPPET('red_hat_register_satellite')
 # REGISTER TO RED HAT SUBSCRIPTION MANAGER WITH LOGIN/PASSWORD
 $SNIPPET('red_hat_register_rhsm')
+
 
 # Let's not wait forewer when ssh'ing:
 sed -i --follow-symlinks -e '/UseDNS/d' /etc/ssh/sshd_config

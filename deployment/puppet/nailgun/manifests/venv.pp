@@ -5,7 +5,8 @@ class nailgun::venv(
   $version,
   $pip_opts = "",
 
-  $production,
+  $listen_address = '127.0.0.1',
+  $listen_port = '8001',
   $nailgun_user,
   $nailgun_group,
 
@@ -19,6 +20,7 @@ class nailgun::venv(
   $staticdir,
   $templatedir,
 
+  $rabbitmq_host = '127.0.0.1',
   $rabbitmq_naily_user,
   $rabbitmq_naily_password,
 
@@ -35,50 +37,40 @@ class nailgun::venv(
 
   ) {
 
-  if $production == 'prod' {
-    package{'nailgun':}
-  } else {
-    nailgun::venv::venv { $venv:
-      ensure => "present",
-      venv => $venv,
-      opts => $venv_opts,
-      require => Package["python-virtualenv"],
-      pip_opts => $pip_opts,
-    }
-
-    Nailgun::Venv::Pip {
-      require => [
-        Nailgun::Venv::Venv[$venv],
-        Package["python-devel"],
-        Package["gcc"],
-        Package["make"],
-      ],
-      opts => $pip_opts,
-      venv => $venv,
-    }
-
-    nailgun::venv::pip { "${venv}_${package}":
-      package => "$package==$version",
-    }
-
-    nailgun::venv::pip { "${venv}_pbr":
-      package => "pbr==0.5.21",
-      require => [
-        Nailgun::Venv::Venv[$venv],
-      ],
-    }
-
-    nailgun::venv::pip { "${venv}_psycopg2":
-      package => "psycopg2==2.4.6",
-      require => [
-        Package["postgresql-devel"],
-        Nailgun::Venv::Venv[$venv],
-        Package["python-devel"],
-        Package["gcc"],
-        Package["make"],
-      ],
-    }
+  nailgun::venv::venv { $venv:
+    ensure => "present",
+    venv => $venv,
+    opts => $venv_opts,
+    require => Package["python-virtualenv"],
+    pip_opts => $pip_opts,
   }
+
+  Nailgun::Venv::Pip {
+    require => [
+      Nailgun::Venv::Venv[$venv],
+      Package["python-devel"],
+      Package["gcc"],
+      Package["make"],
+    ],
+    opts => $pip_opts,
+    venv => $venv,
+  }
+
+  nailgun::venv::pip { "$venv_$package":
+    package => "$package==$version",
+  }
+
+  nailgun::venv::pip { "psycopg2":
+    package => "psycopg2==2.4.6",
+    require => [
+      Package["postgresql-devel"],
+      Nailgun::Venv::Venv[$venv],
+      Package["python-devel"],
+      Package["gcc"],
+      Package["make"],
+    ],
+  }
+
   file { "/etc/nailgun":
     ensure => directory,
     owner => 'root',
@@ -100,20 +92,23 @@ class nailgun::venv(
   file { "/usr/local/bin/fuel":
     ensure  => link,
     target  => "/opt/nailgun/bin/fuel",
+    require => Nailgun::Venv::Pip["$venv_$package"],
   }
 
-  exec {"nailgun_syncdb":
-    command => "${venv}/bin/nailgun_syncdb",
-    require => [
-                File["/etc/nailgun/settings.yaml"],
-                Class["nailgun::database"],
-                ],
-  }
+#  exec {"nailgun_syncdb":
+#    command => "${venv}/bin/nailgun_syncdb",
+#    require => [
+#                File["/etc/nailgun/settings.yaml"],
+#                Nailgun::Venv::Pip["$venv_$package"],
+#                Nailgun::Venv::Pip["psycopg2"],
+#                #Class["nailgun::database"],
+#                ],
+#  }
 
-  exec {"nailgun_upload_fixtures":
-    command => "${venv}/bin/nailgun_fixtures",
-    require => Exec["nailgun_syncdb"],
-  }
+#  exec {"nailgun_upload_fixtures":
+#    command => "${venv}/bin/nailgun_fixtures",
+#    require => Exec["nailgun_syncdb"],
+#  }
 
   file {"/etc/cron.daily/capacity":
     content => template("nailgun/cron_daily_capacity.erb"),
@@ -122,4 +117,4 @@ class nailgun::venv(
     mode => 0644
   }
 
-}
+  }

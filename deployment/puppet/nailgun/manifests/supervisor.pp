@@ -1,7 +1,11 @@
 class nailgun::supervisor(
-  $nailgun_env,
-  $ostf_env,
+  $venv,
+  $conf_file = 'nailgun/supervisord.conf.erb',
+  $service_enabled = true,
   ) {
+  package { "supervisor":
+    ensure => latest,
+  }
 
   file { "/etc/sysconfig/supervisord":
     source => 'puppet:///modules/nailgun/supervisor-sysconfig',
@@ -17,28 +21,25 @@ class nailgun::supervisor(
     mode => '0755',
     require => [Package["supervisor"],
                 File["/etc/sysconfig/supervisord"]],
-    notify => Service["supervisord"],
+    #notify => Service["supervisord"],
   }
 
 
   file { "/etc/supervisord.conf":
-    content => template("nailgun/supervisord.conf.erb"),
+    content => template($conf_file),
     owner => 'root',
     group => 'root',
     mode => 0644,
     require => Package["supervisor"],
-    notify => Service["supervisord"],
+    #notify => Service["supervisord"],
   }
-
-  service { "supervisord":
-    ensure => "running",
-    enable => true,
+  if $service_enabled {
+    service { "supervisord":
+    #ensure => $service_ensure,
+    enable => $service_enabled,
     require => [
                 Package["supervisor"],
-                Service["rabbitmq-server"],
-                File["/var/log/nailgun"],
-                File["/var/log/naily"],
                 ],
+    }
   }
-
 }
